@@ -1,11 +1,37 @@
 <?php
-function full_catalog_array()
+function get_catalog_count($category = null)
+{
+    $category = strtolower($category);
+    include("connection.php");
+
+    try {
+        $sql = "SELECT COUNT(media_id) FROM Media";
+        if (!empty($category)) {
+            $result = $db->prepare(
+                $sql
+                    . " WHERE LOWER(category) = ?"
+            );
+            $result->bindParam(1, $category, PDO::PARAM_STR);
+        } else {
+            $result = $db->prepare($sql);
+        }
+        $result->execute();
+    } catch (Exception $e) {
+        echo "bad query";
+        // echo $e->getMessage();
+
+    }
+
+    $count = $result->fetchColumn(0);
+    return $count;
+}
+// Debug
+function full_catalog_array($limit = null, $offset = 0)
 {
     include("connection.php");
 
     try {
-        $results = $db->query(
-            "SELECT media_id, title, category, img 
+        $sql = "SELECT media_id, title, category, img 
             FROM Media
             ORDER BY 
             REPLACE(
@@ -16,10 +42,18 @@ function full_catalog_array()
                     ),
                     'A ',
                     ''
-                    )"
-        );
+                    )";
+        if (is_integer($limit)) {
+            $results = $db->prepare($sql . " LIMIT ? OFFSET ?");
+            $results->bindParam(1, $limit, PDO::PARAM_INT);
+            $results->bindParam(2, $offset, PDO::PARAM_INT);
+        } else {
+            $results = $db->prepare($sql);
+        }
+        $results->execute();
     } catch (Exception $e) {
         echo "Unable to retrieve results";
+        // echo $e->getMessage();
         exit;
     }
 
@@ -28,13 +62,12 @@ function full_catalog_array()
     return $catalog;
 }
 
-function category_catalog_array($category)
+function category_catalog_array($category, $limit = null, $offset = 0)
 {
     include("connection.php");
     $category = strtolower($category);
     try {
-        $results = $db->prepare(
-            "SELECT media_id, title, category,img 
+        $sql = "SELECT media_id, title, category,img 
          FROM Media
          WHERE LOWER(category) = ?
          ORDER BY 
@@ -46,12 +79,20 @@ function category_catalog_array($category)
            ),
            'A ',
            ''
-         )"
-        );
-        $results->bindParam(1, $category, PDO::PARAM_STR);
+         )";
+        if (is_integer($limit)) {
+            $results = $db->prepare($sql . " LIMIT ? OFFSET ?");
+            $results->bindParam(1, $category, PDO::PARAM_STR);
+            $results->bindParam(2, $limit, PDO::PARAM_INT);
+            $results->bindParam(3, $offset, PDO::PARAM_INT);
+        } else {
+            $results = $db->prepare($sql);
+            $results->bindParam(1, $category, PDO::PARAM_STR);
+        }
         $results->execute();
     } catch (Exception $e) {
         echo "Unable to retrieved results";
+        // echo $e->getMessage();
         exit;
     }
 
@@ -72,6 +113,7 @@ function rand_catalog_array()
         );
     } catch (Exception $e) {
         echo "Unable to retrieve results";
+        // echo $e->getMessage();
         exit;
     }
 
@@ -123,6 +165,37 @@ function single_item_array($id)
         $item[$row["role"]][] = $row["fullname"];
     }
     return $item;
+}
+
+function genre_array($category = null)
+{
+    $category = strtolower($category);
+    include("connection.php");
+    try {
+        $sql = "
+        SELECT genre, category 
+        FROM Genres
+        JOIN  Genre_Categories
+        ON Genres.genre_id = Genre_Categories.genre_id";
+        if (!empty($category)) {
+            $results = $db->prepare($sql . " 
+            WHERE LOWER(category) = ?
+            ORDER BY genre");
+            $results->bindParam(1, $category, PDO::PARAM_STR);
+        } else {
+            $results = $db->prepare($sql . " ORDER BY genre");
+        }
+        $results->execute();
+    } catch (Exception $e) {
+        echo "Bad query";
+        echo $e->getMessage();
+        exit;
+    }
+    $genres = [];
+    while ($row = $results->fetch(PDO::FETCH_ASSOC)) {
+        $genres[$row["category"]][] = $row["genre"];
+    }
+    return $genres;
 }
 
 function get_item_html($item)

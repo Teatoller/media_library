@@ -1,6 +1,5 @@
 <?php
-include("syntax.php");
-
+// include("syntax.php");
 // include("inc/data.php");
 include("inc/functions.php");
 // $catalog = full_catalog_array();

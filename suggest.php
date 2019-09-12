@@ -1,6 +1,6 @@
 <?php
 include("inc/functions.php");
-//Import the PHPMailer class into the global namespace
+// Import the PHPMailer class into the global namespace
 use PHPMailer\PHPMailer\PHPMailer;
 
 require 'vendor/phpmailer/src/PHPMailer.php';
